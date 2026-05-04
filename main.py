@@ -1,23 +1,32 @@
-import os
 from fastapi import FastAPI
 from supabase import create_client, Client
+from pydantic import BaseModel
 
 app = FastAPI()
 
-# Supabase විස්තර (ඔයා එවපු විස්තර මෙතනට දැම්මා)
-url: str = "https://edpwkqwqf64mfa604hom.supabase.co" # ඔයාගේ Project ID එකෙන් හැදුණු URL එක
-key: str = "sb_publishable_edpwkq-Wqf64MFA604HomA__XbLpIvP" 
-supabase: Client = create_client(url, key)
+# ඔයාගේ Supabase විස්තර
+SUPABASE_URL = "https://edpwkqwqf64mfa604hom.supabase.co"
+SUPABASE_KEY = "sb_publishable_edpwkq-Wqf64MFA604HomA__XbLpIvP"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
 
 @app.get("/")
 def home():
     return {"status": "PASIYA Cloud Backend Online"}
 
 @app.post("/register")
-async def register_user(username: str, email: str, password: str):
-    response = supabase.table("users").insert({
-        "username": username, 
-        "email": email, 
-        "password": password 
-    }).execute()
-    return {"message": "User registered successfully", "data": response.data}
+async def register(user: UserRegister):
+    try:
+        # Supabase එකේ "users" table එකට data ඇතුළත් කිරීම
+        response = supabase.table("users").insert({
+            "username": user.username,
+            "email": user.email,
+            "password": user.password
+        }).execute()
+        return {"message": "Success", "user": response.data}
+    except Exception as e:
+        return {"message": "Error", "details": str(e)}
